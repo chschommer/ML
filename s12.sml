@@ -1,6 +1,6 @@
 (*Mein ML*)
 
-(*Implemtiert ist: logisches AND, OR, NOT, autom. TypCasting (real nach Int), Tupel, div, mod, Gleitkomma-Divion, Listen*)
+(*Implemtiert ist: logisches AND, OR, NOT, autom. TypCasting (real nach Int), Tupel, div, mod, ~ , Gleitkomma-Divion, Listen*)
 (*noch nicht fertig ist: Let Ausdrücke, die sind seltsam...*)
 
 
@@ -16,7 +16,7 @@ fun RealfromInt a = if a<0 then RealfromInt'(~a, 0.0, true) else RealfromInt'(a,
 datatype con = False | True | IC of int | RC of real
 type id = string
 datatype opr = Add | Sub | Mul | Leq | AND | OR | Div | Mod | GDiv 
-datatype UnOp = NOT 
+datatype UnOp = NOT | Neg
 
 datatype ty = Bool | Int | Arrow of ty * ty | Real | TupelTyp of ty list | ListeTyp of ty list | LetTyp of ty list
 
@@ -51,6 +51,8 @@ fun elabCon True   = Bool
    |elabCon (RC _) = Real
 
 fun elabU NOT Bool = Bool
+   |elabU Neg Int  = Int
+   |elabU Neg Real = Real
    |elabU _   _    = raise Error "T Unop"
    
 fun elabOpr Add Int  Int   = Int
@@ -115,6 +117,8 @@ fun evalCon False  = IV 0
    |evalCon (RC x) = RV x
 
 fun evalU NOT (IV x) = IV(if x=0 then 1 else 0)
+   |evalU Neg (IV x) = IV(~x)
+   |evalU Neg (RV x) = RV(~x)
    |evalU _       _  = raise Error "R UnOpr"
 
 fun evalOpr Add (IV x) (IV y)  = IV(x+y)
