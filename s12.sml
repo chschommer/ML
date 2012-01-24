@@ -3,7 +3,7 @@
 (*Implemtiert ist: logisches AND, OR, NOT, autom. TypCasting (real nach Int), Tupel, div, mod, Gleitkomma-Divion, Listen*)
 
 
-(*Hilfsprozedur: *)
+(*Hilfsprozedur:*)
 fun RealfromInt' (0, a , bool) = if bool then ~a else a
    |RealfromInt' (n, a , bool) = RealfromInt'(n-1, a+1.0, bool)
 
