@@ -17,7 +17,7 @@ type id = string
 datatype opr = Add | Sub | Mul | Leq | AND | OR | Div | Mod | GDiv 
 datatype UnOp = NOT 
 
-datatype ty = Bool | Int | Arrow of ty * ty | Real | TupelTyp of ty list |ListeTyp of ty list
+datatype ty = Bool | Int | Arrow of ty * ty | Real | TupelTyp of ty list | ListeTyp of ty list | LetTyp of ty list
 
 datatype exp = 
      Con of con
@@ -29,6 +29,7 @@ datatype exp =
    | App of exp * exp
    | Tupel of exp list
    | Liste of exp list
+   | Let of exp list * exp
 
 
 
@@ -85,7 +86,8 @@ fun elab f (Con c)          = elabCon c
 			      val help = hd ll
                               fun ck xs = foldl (fn (m,s) => if m<>help then raise Error "T Listen Typ stimmt nicht" else true) false xs 
 			      in
-                              if ck ll then ListeTyp(ll) else raise Error "T Listen Typ stimmt nicht"  end                             
+                              if ck ll then ListeTyp(ll) else raise Error "T Listen Typ stimmt nicht"  end
+   |elab f (Let(xs,ys))     = elab f ys      (*Still to do*)                       
    |elab f (Opr(opr, e1, e2)) = elabOpr opr (elab f e1) (elab f e2)
    |elab f (UOp(uno, e1))   = elabU uno (elab f e1)
    |elab f (If(e1,e2,e3))   = 
