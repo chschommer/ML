@@ -1,6 +1,6 @@
 (*Mein ML*)
 
-(*Implemtiert ist: logisches AND, OR, NOT, autom. TypCasting (real nach Int), Tupel, div, mod, Gleitkomma-Divion*)
+(*Implemtiert ist: logisches AND, OR, NOT, autom. TypCasting (real nach Int), Tupel, div, mod, Gleitkomma-Divion, Listen*)
 
 
 (*Hilfsprozedur: *)
@@ -17,7 +17,7 @@ type id = string
 datatype opr = Add | Sub | Mul | Leq | AND | OR | Div | Mod | GDiv 
 datatype UnOp = NOT 
 
-datatype ty = Bool | Int | Arrow of ty * ty | Real | TupelTyp of ty list
+datatype ty = Bool | Int | Arrow of ty * ty | Real | TupelTyp of ty list |ListeTyp of ty list
 
 datatype exp = 
      Con of con
@@ -28,6 +28,7 @@ datatype exp =
    | Abs of id * ty * exp
    | App of exp * exp
    | Tupel of exp list
+   | Liste of exp list
 
 
 
@@ -79,6 +80,12 @@ fun elabOpr Add Int  Int   = Int
 fun elab f (Con c)          = elabCon c
    |elab f (Id x)           = f x
    |elab f (Tupel xs)       = TupelTyp (foldl (fn(m,s) => s@ [elab empty m] ) ( nil) xs )
+   |elab f (Liste xs)       = let 
+                              val ll = foldl (fn(m,s) => s @ [elab f m]) (nil) xs
+			      val help = hd ll
+                              fun ck xs = foldl (fn (m,s) => if m<>help then raise Error "T Listen Typ stimmt nicht" else true) false xs 
+			      in
+                              if ck ll then ListeTyp(ll) else raise Error "T Listen Typ stimmt nicht"  end                             
    |elab f (Opr(opr, e1, e2)) = elabOpr opr (elab f e1) (elab f e2)
    |elab f (UOp(uno, e1))   = elabU uno (elab f e1)
    |elab f (If(e1,e2,e3))   = 
@@ -95,7 +102,7 @@ fun elab f (Con c)          = elabCon c
 
 (*eval*)
 
-datatype value = IV of int | RV of real |TV of value list
+datatype value = IV of int | RV of real |TV of value list |LV of value list
               | Proc of id * exp * value env
 
 fun evalCon False  = IV 0
@@ -135,6 +142,7 @@ fun evalOpr Add (IV x) (IV y)  = IV(x+y)
 fun eval f (Con c) = evalCon c
    |eval f (Id x)  = f x
    |eval f (Tupel xs) = TV(foldl (fn(m,s) => s @ [eval empty m]) nil xs)
+   |eval f (Liste xs) = LV(foldl (fn(m,s) => s @ [eval empty m]) nil xs)
    |eval f (UOp(uno, e1))   = evalU uno (eval f e1)
    |eval f (Opr(opr,x,y)) = evalOpr opr (eval f x) (eval f y)
    |eval f (If(b,x,y))   = (case eval f b of
