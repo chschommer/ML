@@ -1,6 +1,7 @@
 (*Mein ML*)
 
 (*Implemtiert ist: logisches AND, OR, NOT, autom. TypCasting (real nach Int), Tupel, div, mod, Gleitkomma-Divion, Listen*)
+(*noch nicht fertig ist: Let Ausdrücke, die sind seltsam...*)
 
 
 (*Hilfsprozedur:*)
@@ -78,27 +79,28 @@ fun elabOpr Add Int  Int   = Int
    |elabOpr GDiv Int Int   = Real
    |elabOpr _    _   _     = raise Error "T Opr" 
 
-fun elab f (Con c)          = elabCon c
-   |elab f (Id x)           = f x
-   |elab f (Tupel xs)       = TupelTyp (foldl (fn(m,s) => s@ [elab empty m] ) ( nil) xs )
-   |elab f (Liste xs)       = let 
-                              val ll = foldl (fn(m,s) => s @ [elab f m]) (nil) xs
-			      val help = hd ll
-                              fun ck xs = foldl (fn (m,s) => if m<>help then raise Error "T Listen Typ stimmt nicht" else true) false xs 
-			      in
-                              if ck ll then ListeTyp(ll) else raise Error "T Listen Typ stimmt nicht"  end
-   |elab f (Let(xs,ys))     = elab f ys      (*Still to do*)                       
+fun elab f (Con c)            = elabCon c
+   |elab f (Id x)             = f x
+   |elab f (Tupel xs)         = TupelTyp (foldl (fn(m,s) => s@ [elab empty m] ) ( nil) xs )
+   |elab f (Liste xs)         = let 
+                                 val ll = foldl (fn(m,s) => s @ [elab f m]) (nil) xs
+			         val help = hd ll
+                                 fun ck xs = foldl (fn (m,s) => if m<>help then raise Error "T Listen Typ stimmt nicht" else true) false xs 
+			        in
+                                 if ck ll then ListeTyp(ll) else raise Error "T Listen Typ stimmt nicht"  
+                                end
+   |elab f (Let(xs,ys))       = elab f ys                                                                                                            (*Still to do*)                       
    |elab f (Opr(opr, e1, e2)) = elabOpr opr (elab f e1) (elab f e2)
-   |elab f (UOp(uno, e1))   = elabU uno (elab f e1)
-   |elab f (If(e1,e2,e3))   = 
-                     (case (elab f e1, elab f e2, elab f e3) of 
-                           (Bool, t2, t3) => if t2=t3 then t2 else raise Error "T If1 Typ 2 != Typ 3"
-                     | _ => raise Error "T If2 Sonst iwas falsch")
-   |elab f (Abs(x,t,e))     = Arrow(t, elab (update f x t) e)
-   |elab f (App(e1,e2))     = (case elab f e1 of 
-                               Arrow(t,t') => if t = elab f e2 then t' 
-                               else raise Error "T App1 Typen Stimmen nicht"
-    			      | _ => raise Error "T App 2")                        
+   |elab f (UOp(uno, e1))     = elabU uno (elab f e1)
+   |elab f (If(e1,e2,e3))     = 
+                               (case (elab f e1, elab f e2, elab f e3) of 
+                                   (Bool, t2, t3) => if t2=t3 then t2 else raise Error "T If1 Typ 2 != Typ 3"
+                               | _ => raise Error "T If2 Sonst iwas falsch")
+   |elab f (Abs(x,t,e))       = Arrow(t, elab (update f x t) e)
+   |elab f (App(e1,e2))       = (case elab f e1 of 
+                                 Arrow(t,t') => if t = elab f e2 then t' 
+                                 else raise Error "T App1 Typen Stimmen nicht"
+    			        | _ => raise Error "T App 2")                        
 
 
 
@@ -141,18 +143,19 @@ fun evalOpr Add (IV x) (IV y)  = IV(x+y)
    |evalOpr GDiv (RV x) (RV y) = if y=0.0 then raise Error "R Opr GDiv durch 0" else RV(x/y)
    |evalOpr _     _       _    = raise Error "R Opr"
 
-fun eval f (Con c) = evalCon c
-   |eval f (Id x)  = f x
-   |eval f (Tupel xs) = TV(foldl (fn(m,s) => s @ [eval empty m]) nil xs)
-   |eval f (Liste xs) = LV(foldl (fn(m,s) => s @ [eval empty m]) nil xs)
-   |eval f (UOp(uno, e1))   = evalU uno (eval f e1)
-   |eval f (Opr(opr,x,y)) = evalOpr opr (eval f x) (eval f y)
-   |eval f (If(b,x,y))   = (case eval f b of
-                              IV 1 => eval f x
-                             |IV 0 => eval f y
-                             | _   => raise Error "R If Kein Bool an Pos 1")
-   |eval f (Abs(x,t,e))  = Proc(x,e,f)
-   |eval f (App(e1,e2))  = (case (eval f e1, eval f e2) of 
+fun eval f (Con c)             = evalCon c
+   |eval f (Id x)              = f x
+   |eval f (Tupel xs)          = TV(foldl (fn(m,s) => s @ [eval empty m]) nil xs)
+   |eval f (Liste xs)          = LV(foldl (fn(m,s) => s @ [eval empty m]) nil xs)
+   |eval f (Let(xs,ys))        = eval f ys
+   |eval f (UOp(uno, e1))      = evalU uno (eval f e1)
+   |eval f (Opr(opr,x,y))      = evalOpr opr (eval f x) (eval f y)
+   |eval f (If(b,x,y))         = (case eval f b of
+                                   IV 1 => eval f x
+                                  |IV 0 => eval f y
+                                   | _   => raise Error "R If Kein Bool an Pos 1")
+   |eval f (Abs(x,t,e))        = Proc(x,e,f)
+   |eval f (App(e1,e2))        = (case (eval f e1, eval f e2) of 
                                               (Proc(x,e,f'), v) => eval (update f' x v) e
                                             | _ => raise Error "R App")
 
