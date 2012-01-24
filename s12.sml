@@ -10,7 +10,7 @@ fun RealfromInt' (0, a , bool) = if bool then ~a else a
 fun RealfromInt a = if a<0 then RealfromInt'(~a, 0.0, true) else RealfromInt'(a,0.0,false)
 
 
-(*Hilfsprozedur/*)
+(*Hilfsprozedur:*)
 
 datatype con = False | True | IC of int | RC of real
 type id = string
