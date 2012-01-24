@@ -156,6 +156,9 @@ fun V2Real (RV x) = x
 
 fun check xs = if (foldl (fn(m,s) => if m=s then true else false) true xs) then Bestanden else Durchgefallen
 
+
+(*arith. Test*)
+
 val Arith = [V2Real(eval empty (Opr(Add,Con (RC 6.648700471127845),Con (RC 8.959234998406282)))) = 6.648700471127845 + 8.959234998406282,
 V2Real(eval empty (Opr(Sub,Con (RC 5.002604629400707),Con (RC 7.94417247348976)))) = 5.002604629400707 - 7.94417247348976,
 V2Real(eval empty (Opr(Mul,Con (RC 6.121988566364697),Con (RC 9.532579459619745)))) = 6.121988566364697 * 9.532579459619745,
@@ -177,6 +180,7 @@ V2Real(eval empty (Opr(Sub,Con (RC 0.7315673089162855),Con (RC 8.799885584200217
 V2Real(eval empty (Opr(Mul,Con (RC 4.365272187566368),Con (RC 9.848913310016009)))) = 4.365272187566368 * 9.848913310016009,
 V2Real(eval empty (Opr(GDiv,Con (RC 5.666626635300766),Con (RC 8.338641586227983)))) = 5.666626635300766 / 8.338641586227983]
 
+(*casting Tests*)
 val castTest = 
 [V2Real(eval empty (Opr(Add,Con (RC 7.194687636777993),Con (IC 2)))) = 7.194687636777993 + RealfromInt 2,
 V2Real(eval empty (Opr(Sub,Con (RC 3.193768984182489),Con (IC 7)))) = 3.193768984182489 - RealfromInt 7,
