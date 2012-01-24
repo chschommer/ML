@@ -41,7 +41,7 @@ fun update env x a y = if y=x then a else env y
 
 exception Error of string
 
-(*elab*)
+(*elab *)
 
 fun elabCon True   = Bool
    |elabCon False  = Bool
