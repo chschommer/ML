@@ -1,7 +1,8 @@
 (*Mein ML*)
 
-(*Implemtiert ist: logisches AND, OR, NOT, autom. TypCasting (Int nach Real), Tupel, div, mod, ~ , Gleitkomma-Division, Listen*)
-(*noch nicht fertig ist: Let Ausdrücke, die sind seltsam...*)
+(*Implemtiert ist: logisches AND, OR, NOT, autom. TypCasting (Int nach Real), Tupel, div, mod, ~ ,*)
+(*                  Gleitkomma-Division, Listen, Let Ausdrücke (quasi), Konkatenation zweier Listen (CCat) *)
+
 
 
 (*Hilfsprozedur zur Umrechnung Int nach Real:*)
@@ -13,16 +14,29 @@ fun RealfromInt a = if a<0 then RealfromInt'(~a, 0.0, true) else RealfromInt'(a,
 
 (*Datentypen:*)
 
-datatype con  = False | True | IC of int | RC of real                                         (*RC = Real Constant*)
+datatype con  = False 
+              | True 
+              | IC of int 
+              | RC of real        (*RC = Real Constant*)
 type id       = string
-datatype opr  = Add | Sub | Mul | Leq | AND | OR | Div | Mod | GDiv                           (*Gleitkomma Divsion*)
-datatype UnOp = NOT | Neg                                                                     (*Unäre Operatoren ! und ~*)
+datatype opr  = Add 
+              | Sub 
+              | Mul 
+              | Leq 
+              | AND 
+              | OR 
+              | Div 
+              | Mod 
+              | GDiv              (*Gleitkomma Divsion*)
+              | CCat              (*Listen Concat*)
+
+datatype UnOp = NOT | Neg         (*Unäre Operatoren ! und ~ *)
 datatype ty   = Bool 
               | Int 
               | Arrow of ty * ty 
               | Real 
               | TupelTyp of ty list 
-              | ListeTyp of ty list 
+              | ListeTyp of ty 
               | LetTyp of ty list
 
 datatype exp = 
@@ -35,7 +49,7 @@ datatype exp =
    | App of exp * exp
    | Tupel of exp list                            (*Tupel  Konstruktor*)
    | Liste of exp list                            (*Listen Konstruktor*)
-   | Let of exp list * exp                        (*Let    SKonstruktor*)
+   | Let of exp list * exp                        (*Let    Konstruktor*)
 
 
 
@@ -60,31 +74,32 @@ fun elabU NOT Bool = Bool
    |elabU Neg Real = Real
    |elabU _   _    = raise Error "T Unop"
    
-fun elabOpr Add Int  Int   = Int
-   |elabOpr Add Int  Real  = Real
-   |elabOpr Add Real Int   = Real
-   |elabOpr Add Real Real  = Real
-   |elabOpr Sub Int  Int   = Int
-   |elabOpr Sub Real Int   = Real
-   |elabOpr Sub Int  Real  = Real
-   |elabOpr Sub Real Real  = Real	
-   |elabOpr Mul Int  Int   = Int
-   |elabOpr Mul Real Int   = Real
-   |elabOpr Mul Int  Real  = Real
-   |elabOpr Mul Real Real  = Real
-   |elabOpr Leq Int  Int   = Bool
-   |elabOpr Leq Real Int   = Bool
-   |elabOpr Leq Int  Real  = Bool
-   |elabOpr Leq Real Real  = Bool
-   |elabOpr AND Bool Bool  = Bool
-   |elabOpr OR  Bool Bool  = Bool
-   |elabOpr Div Int Int    = Int
-   |elabOpr Mod Int Int    = Int
-   |elabOpr GDiv Int Real  = Real
-   |elabOpr GDiv Real Real = Real
-   |elabOpr GDiv Real Int  = Real
-   |elabOpr GDiv Int Int   = Real
-   |elabOpr _    _   _     = raise Error "T Opr" 
+fun elabOpr Add  Int           Int           = Int
+   |elabOpr Add  Int           Real          = Real
+   |elabOpr Add  Real          Int           = Real
+   |elabOpr Add  Real          Real          = Real
+   |elabOpr Sub  Int           Int           = Int
+   |elabOpr Sub  Real          Int           = Real
+   |elabOpr Sub  Int           Real          = Real
+   |elabOpr Sub  Real          Real          = Real	
+   |elabOpr Mul  Int           Int           = Int
+   |elabOpr Mul  Real          Int           = Real
+   |elabOpr Mul  Int           Real          = Real
+   |elabOpr Mul  Real          Real          = Real
+   |elabOpr Leq  Int           Int           = Bool
+   |elabOpr Leq  Real          Int           = Bool
+   |elabOpr Leq  Int           Real          = Bool
+   |elabOpr Leq  Real          Real          = Bool
+   |elabOpr AND  Bool          Bool          = Bool
+   |elabOpr OR   Bool          Bool          = Bool
+   |elabOpr Div  Int           Int           = Int
+   |elabOpr Mod  Int           Int           = Int
+   |elabOpr GDiv Int           Real          = Real
+   |elabOpr GDiv Real          Real          = Real
+   |elabOpr GDiv Real          Int           = Real
+   |elabOpr GDiv Int           Int           = Real
+   |elabOpr CCat (ListeTyp xs) (ListeTyp ys) = ListeTyp (if xs = ys then xs else raise Error "T Opr Concat, unterschiedliche ListenTypen")
+   |elabOpr _    _              _            = raise Error "T Opr" 
 
 fun elab f (Con c)            = elabCon c
    |elab f (Id x)             = f x
@@ -94,7 +109,7 @@ fun elab f (Con c)            = elabCon c
 			         val help = hd ll
                                  fun ck xs = foldl (fn (m,s) => if m<>help then raise Error "T Listen Typ stimmt nicht" else true) false xs 
 			        in
-                                 if ck ll then ListeTyp(ll) else raise Error "T Listen Typ stimmt nicht"  
+                                 if ck ll then ListeTyp(hd ll) else raise Error "T Listen Typ stimmt nicht"  
                                 end
    |elab f (Let(xs,ys))       = elab f ys                                                                                           
    |elab f (Opr(opr, e1, e2)) = elabOpr opr (elab f e1) (elab f e2)
@@ -130,31 +145,32 @@ fun evalU NOT (IV x) = IV(if x=0 then 1 else 0)
    |evalU Neg (RV x) = RV(~x)
    |evalU _       _  = raise Error "R UnOpr"
 
-fun evalOpr Add (IV x) (IV y)  = IV(x+y)
-   |evalOpr Add (RV x) (IV y)  = RV( x + (RealfromInt y))
-   |evalOpr Add (IV x) (RV y)  = RV((RealfromInt x) + y)
-   |evalOpr Add (RV x) (RV y)  = RV(x+y)
-   |evalOpr Sub (IV x) (IV y)  = IV(x-y)
-   |evalOpr Sub (RV x) (IV y)  = RV(x - (RealfromInt y))
-   |evalOpr Sub (IV x) (RV y)  = RV((RealfromInt x) - y)
-   |evalOpr Sub (RV x) (RV y)  = RV(x-y)
-   |evalOpr Mul (IV x) (IV y)  = IV(x*y)
-   |evalOpr Mul (RV x) (IV y)  = RV( x *  (RealfromInt y))
-   |evalOpr Mul (IV x) (RV y)  = RV((RealfromInt x) * y)
-   |evalOpr Mul (RV x) (RV y)  = RV(x*y)
-   |evalOpr Leq (IV x) (IV y)  = IV(if x<=y then 1 else 0)
-   |evalOpr Leq (RV x) (IV y)  = IV(if x<= (RealfromInt y) then 1 else 0)
-   |evalOpr Leq (IV x) (RV y)  = IV(if (RealfromInt x) <= y then 1 else 0)
-   |evalOpr Leq (RV x) (RV y)  = IV(if x<=y then 1 else 0)
-   |evalOpr AND (IV x) (IV y)  = IV(case (x,y) of (1,1) => 1 | _ => 0)
-   |evalOpr OR  (IV x) (IV y)  = IV(case (x,y) of (0,0) => 0 | _ => 1)
-   |evalOpr Div (IV x) (IV y)  = if y=0   then raise Error "R Opr div durch 0"  else IV(x div y)
-   |evalOpr Mod (IV x) (IV y)  = if y=0   then raise Error "R Opr mod durch 0"  else IV(x mod y) 
-   |evalOpr GDiv (IV x) (IV y) = if y=0   then raise Error "R Opr GDiv durch 0" else RV((RealfromInt x) / (RealfromInt y))
-   |evalOpr GDiv (RV x) (IV y) = if y=0   then raise Error "R Opr GDiv durch 0" else RV(x / (RealfromInt y))
-   |evalOpr GDiv (IV x) (RV y) = if y=0.0 then raise Error "R Opr GDiv durch 0" else RV((RealfromInt x) / y)
-   |evalOpr GDiv (RV x) (RV y) = if y=0.0 then raise Error "R Opr GDiv durch 0" else RV(x/y)
-   |evalOpr _     _       _    = raise Error "R Opr"
+fun evalOpr Add  (IV x) (IV y)   = IV(x+y)
+   |evalOpr Add  (RV x) (IV y)   = RV( x + (RealfromInt y))
+   |evalOpr Add  (IV x) (RV y)   = RV((RealfromInt x) + y)
+   |evalOpr Add  (RV x) (RV y)   = RV(x+y)
+   |evalOpr Sub  (IV x) (IV y)   = IV(x-y)
+   |evalOpr Sub  (RV x) (IV y)   = RV(x - (RealfromInt y))
+   |evalOpr Sub  (IV x) (RV y)   = RV((RealfromInt x) - y)
+   |evalOpr Sub  (RV x) (RV y)   = RV(x-y)
+   |evalOpr Mul  (IV x) (IV y)   = IV(x*y)
+   |evalOpr Mul  (RV x) (IV y)   = RV( x *  (RealfromInt y))
+   |evalOpr Mul  (IV x) (RV y)   = RV((RealfromInt x) * y)
+   |evalOpr Mul  (RV x) (RV y)   = RV(x*y)
+   |evalOpr Leq  (IV x) (IV y)   = IV(if x<=y then 1 else 0)
+   |evalOpr Leq  (RV x) (IV y)   = IV(if x<= (RealfromInt y) then 1 else 0)
+   |evalOpr Leq  (IV x) (RV y)   = IV(if (RealfromInt x) <= y then 1 else 0)
+   |evalOpr Leq  (RV x) (RV y)   = IV(if x<=y then 1 else 0)
+   |evalOpr AND  (IV x) (IV y)   = IV(case (x,y) of (1,1) => 1 | _ => 0)
+   |evalOpr OR   (IV x) (IV y)   = IV(case (x,y) of (0,0) => 0 | _ => 1)
+   |evalOpr Div  (IV x) (IV y)   = if y=0   then raise Error "R Opr div durch 0"  else IV(x div y)
+   |evalOpr Mod  (IV x) (IV y)   = if y=0   then raise Error "R Opr mod durch 0"  else IV(x mod y) 
+   |evalOpr GDiv (IV x) (IV y)   = if y=0   then raise Error "R Opr GDiv durch 0" else RV((RealfromInt x) / (RealfromInt y))
+   |evalOpr GDiv (RV x) (IV y)   = if y=0   then raise Error "R Opr GDiv durch 0" else RV(x / (RealfromInt y))
+   |evalOpr GDiv (IV x) (RV y)   = if y=0.0 then raise Error "R Opr GDiv durch 0" else RV((RealfromInt x) / y)
+   |evalOpr GDiv (RV x) (RV y)   = if y=0.0 then raise Error "R Opr GDiv durch 0" else RV(x/y)
+   |evalOpr Ccat (LV x) (LV y)   = LV(x@y)
+   |evalOpr _     _       _      = raise Error "R Opr"
 
 fun eval f (Con c)             = evalCon c
    |eval f (Id x)              = f x
@@ -173,7 +189,7 @@ fun eval f (Con c)             = evalCon c
                                             | _ => raise Error "R App")
 
 
-(*Testsuite*)
+(*Testsuite für eval, sorry, aber elab auch noch, war zu viel ;)*)
 
 datatype Test = Bestanden | Durchgefallen
 
@@ -220,8 +236,23 @@ V2Real(eval empty (Opr(Sub,Con (IC 8),Con (RC 9.420227886883177)))) = RealfromIn
 V2Real(eval empty (Opr(Mul,Con (IC 5),Con (RC 3.531406748570387)))) = RealfromInt 5 * 3.531406748570387,
 V2Real(eval empty (Opr(GDiv,Con (IC 3),Con (RC 3.9441315070073135)))) = RealfromInt 3 / 3.9441315070073135]
 
+(*And Or Test*)
+val OpAndOR =
+[V2Int(eval empty (Opr(AND, Con True, Con False))) = 0,
+ V2Int(eval empty (Opr(AND, Con True, Con True))) = 1,
+ V2Int(eval empty (Opr(AND, Con False, Con True))) = 0,
+ V2Int(eval empty (Opr(AND, Con False, Con False))) = 0,
+ V2Int(eval empty (Opr(OR, Con True, Con False))) = 1,
+ V2Int(eval empty (Opr(OR, Con False, Con False))) = 0,
+ V2Int(eval empty (Opr(OR, Con False, Con True))) = 1,
+ V2Int(eval empty (Opr(OR, Con True, Con True))) = 1]
+
+
+
+
 
 (*Tests ausführen*)
-fun artTest () = check Arith            (*Test für arith. Ausdrücke*)
+fun artTest ()    = check Arith            (*Test für arith. Ausdrücke*)
 fun CastingTest() = check castTest      (*Test für das aut. Typ casten*)
+fun opAndOr()     = check OpAndOR           (*Test für And/Or ausführen*)
 
