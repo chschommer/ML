@@ -1,10 +1,10 @@
 (*Mein ML*)
 
-(*Implemtiert ist: logisches AND, OR, NOT, autom. TypCasting (real nach Int), Tupel, div, mod, ~ , Gleitkomma-Divion, Listen*)
+(*Implemtiert ist: logisches AND, OR, NOT, autom. TypCasting (Int nach Real), Tupel, div, mod, ~ , Gleitkomma-Division, Listen*)
 (*noch nicht fertig ist: Let Ausdrücke, die sind seltsam...*)
 
 
-(*Hilfsprozedur:*)
+(*Hilfsprozedur zur Umrechnung Int nach Real:*)
 fun RealfromInt' (0, a , bool) = if bool then ~a else a
    |RealfromInt' (n, a , bool) = RealfromInt'(n-1, a+1.0, bool)
 
@@ -33,9 +33,9 @@ datatype exp =
    | If of exp * exp * exp
    | Abs of id * ty * exp
    | App of exp * exp
-   | Tupel of exp list                            (*Tupel Konstruktor*)
+   | Tupel of exp list                            (*Tupel  Konstruktor*)
    | Liste of exp list                            (*Listen Konstruktor*)
-   | Let of exp list * exp                        (*Let Konstruktor*)
+   | Let of exp list * exp                        (*Let    SKonstruktor*)
 
 
 
@@ -177,9 +177,11 @@ fun eval f (Con c)             = evalCon c
 
 datatype Test = Bestanden | Durchgefallen
 
+(*Rechnet Value Werte in 'normale' um*)
 fun V2Int (IV x) = x
 fun V2Real (RV x) = x
 
+(*Testet bool Arrays darauf, dass nur true drin steht*)
 fun check xs = if (foldl (fn(m,s) => if m=s then true else false) true xs) then Bestanden else Durchgefallen
 
 
@@ -219,7 +221,7 @@ V2Real(eval empty (Opr(Mul,Con (IC 5),Con (RC 3.531406748570387)))) = RealfromIn
 V2Real(eval empty (Opr(GDiv,Con (IC 3),Con (RC 3.9441315070073135)))) = RealfromInt 3 / 3.9441315070073135]
 
 
-
+(*Tests ausführen*)
 fun artTest () = check Arith            (*Test für arith. Ausdrücke*)
 fun CastingTest() = check castTest      (*Test für das aut. Typ casten*)
 
