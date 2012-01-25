@@ -11,26 +11,31 @@ fun RealfromInt' (0, a , bool) = if bool then ~a else a
 fun RealfromInt a = if a<0 then RealfromInt'(~a, 0.0, true) else RealfromInt'(a,0.0,false)
 
 
-(*Hilfsprozedur:*)
+(*Datentypen:*)
 
-datatype con = False | True | IC of int | RC of real
-type id = string
-datatype opr = Add | Sub | Mul | Leq | AND | OR | Div | Mod | GDiv 
-datatype UnOp = NOT | Neg
-
-datatype ty = Bool | Int | Arrow of ty * ty | Real | TupelTyp of ty list | ListeTyp of ty list | LetTyp of ty list
+datatype con  = False | True | IC of int | RC of real                                         (*RC = Real Constant*)
+type id       = string
+datatype opr  = Add | Sub | Mul | Leq | AND | OR | Div | Mod | GDiv                           (*Gleitkomma Divsion*)
+datatype UnOp = NOT | Neg                                                                     (*Unäre Operatoren ! und ~*)
+datatype ty   = Bool 
+              | Int 
+              | Arrow of ty * ty 
+              | Real 
+              | TupelTyp of ty list 
+              | ListeTyp of ty list 
+              | LetTyp of ty list
 
 datatype exp = 
      Con of con
    | Id of id
-   | UOp of UnOp * exp
+   | UOp of UnOp * exp                            (*Unärer Operator*)
    | Opr of opr * exp * exp
    | If of exp * exp * exp
    | Abs of id * ty * exp
    | App of exp * exp
-   | Tupel of exp list
-   | Liste of exp list
-   | Let of exp list * exp
+   | Tupel of exp list                            (*Tupel Konstruktor*)
+   | Liste of exp list                            (*Listen Konstruktor*)
+   | Let of exp list * exp                        (*Let Konstruktor*)
 
 
 
@@ -91,7 +96,7 @@ fun elab f (Con c)            = elabCon c
 			        in
                                  if ck ll then ListeTyp(ll) else raise Error "T Listen Typ stimmt nicht"  
                                 end
-   |elab f (Let(xs,ys))       = elab f ys                                                                                                            (*Still to do*)                       
+   |elab f (Let(xs,ys))       = elab f ys                                                                                           
    |elab f (Opr(opr, e1, e2)) = elabOpr opr (elab f e1) (elab f e2)
    |elab f (UOp(uno, e1))     = elabU uno (elab f e1)
    |elab f (If(e1,e2,e3))     = 
@@ -108,8 +113,12 @@ fun elab f (Con c)            = elabCon c
 
 (*eval*)
 
-datatype value = IV of int | RV of real |TV of value list |LV of value list
-              | Proc of id * exp * value env
+datatype value = 
+                  IV of int 
+                | RV of real 
+                | TV of value list                        (*Tupel Value*) 
+                | LV of value list                        (*Listen Value*)
+                | Proc of id * exp * value env
 
 fun evalCon False  = IV 0
    |evalCon True   = IV 1
@@ -139,10 +148,10 @@ fun evalOpr Add (IV x) (IV y)  = IV(x+y)
    |evalOpr Leq (RV x) (RV y)  = IV(if x<=y then 1 else 0)
    |evalOpr AND (IV x) (IV y)  = IV(case (x,y) of (1,1) => 1 | _ => 0)
    |evalOpr OR  (IV x) (IV y)  = IV(case (x,y) of (0,0) => 0 | _ => 1)
-   |evalOpr Div (IV x) (IV y)  = if y=0 then raise Error "R Opr div durch 0" else IV(x div y)
-   |evalOpr Mod (IV x) (IV y)  = if y=0 then raise Error "R Opr mod durch 0" else IV(x mod y) 
-   |evalOpr GDiv (IV x) (IV y) = if y=0 then raise Error "R Opr GDiv durch 0" else RV((RealfromInt x) / (RealfromInt y))
-   |evalOpr GDiv (RV x) (IV y) = if y=0 then raise Error "R Opr GDiv durch 0" else RV(x / (RealfromInt y))
+   |evalOpr Div (IV x) (IV y)  = if y=0   then raise Error "R Opr div durch 0"  else IV(x div y)
+   |evalOpr Mod (IV x) (IV y)  = if y=0   then raise Error "R Opr mod durch 0"  else IV(x mod y) 
+   |evalOpr GDiv (IV x) (IV y) = if y=0   then raise Error "R Opr GDiv durch 0" else RV((RealfromInt x) / (RealfromInt y))
+   |evalOpr GDiv (RV x) (IV y) = if y=0   then raise Error "R Opr GDiv durch 0" else RV(x / (RealfromInt y))
    |evalOpr GDiv (IV x) (RV y) = if y=0.0 then raise Error "R Opr GDiv durch 0" else RV((RealfromInt x) / y)
    |evalOpr GDiv (RV x) (RV y) = if y=0.0 then raise Error "R Opr GDiv durch 0" else RV(x/y)
    |evalOpr _     _       _    = raise Error "R Opr"
