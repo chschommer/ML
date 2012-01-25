@@ -185,7 +185,8 @@ fun check xs = if (foldl (fn(m,s) => if m=s then true else false) true xs) then 
 
 (*arith. Test*)
 
-val Arith = [V2Real(eval empty (Opr(Add,Con (RC 6.648700471127845),Con (RC 8.959234998406282)))) = 6.648700471127845 + 8.959234998406282,
+val Arith = 
+[V2Real(eval empty (Opr(Add,Con (RC 6.648700471127845),Con (RC 8.959234998406282)))) = 6.648700471127845 + 8.959234998406282,
 V2Real(eval empty (Opr(Sub,Con (RC 5.002604629400707),Con (RC 7.94417247348976)))) = 5.002604629400707 - 7.94417247348976,
 V2Real(eval empty (Opr(Mul,Con (RC 6.121988566364697),Con (RC 9.532579459619745)))) = 6.121988566364697 * 9.532579459619745,
 V2Real(eval empty (Opr(GDiv,Con (RC 4.328138364910766),Con (RC 8.34908662220213)))) = 4.328138364910766 / 8.34908662220213,
